@@ -115,6 +115,20 @@ class ImageCreditsNofollowPlugin {
 				'helps' => __( 'URL where the original image was found.', 'image-credits-nofollow' )*/
 		);
 
+		$form_fields['license_name'] = array(
+				'label' => __( 'License Name', 'image-credits-nofollow' ),
+				'input' => 'text',
+				'value' => get_post_meta($post->ID, '_wp_attachment_license_name', true) /*,
+				'helps' => __( 'Source name of the image.', 'image-credits-nofollow' )*/
+		);
+
+		$form_fields['license_link'] = array(
+				'label' => __( 'License Link', 'image-credits-nofollow' ),
+				'input' => 'text',
+				'value' => get_post_meta($post->ID, '_wp_attachment_license_url', true) /*,
+				'helps' => __( 'URL where the original image was found.', 'image-credits-nofollow' )*/
+		);
+
 		$source_dofollow = (bool) get_post_meta($post->ID, '_wp_attachment_source_dofollow', true);
 		$form_fields['source_dofollow'] = array(
 			'label' => __( 'Follow source URL?', 'image-credits-nofollow' ),
@@ -148,6 +162,30 @@ class ImageCreditsNofollowPlugin {
 					delete_post_meta($post['ID'], '_wp_attachment_source_url');
 				} else {
 					update_post_meta($post['ID'], '_wp_attachment_source_url', esc_url( $attachment['credits_link']));
+				}
+			}
+		}
+
+		if (isset($attachment['license_name'])) {
+			$credits_source = get_post_meta($post['ID'], '_wp_attachment_license_name', true);
+
+			if ($credits_source != esc_attr($attachment['license_name'])) {
+				if (empty($attachment['license_name'])) {
+					delete_post_meta($post['ID'], '_wp_attachment_license_name');
+				} else {
+					update_post_meta($post['ID'], '_wp_attachment_license_name', esc_attr($attachment['license_name']));
+				}
+			}
+		}
+
+		if (isset($attachment['license_link'])) {
+			$credits_link = get_post_meta($post['ID'], '_wp_attachment_license_url', true);
+
+			if ($credits_link != esc_url( $attachment['license_link'])) {
+				if (empty($attachment['license_link'])) {
+					delete_post_meta($post['ID'], '_wp_attachment_license_url');
+				} else {
+					update_post_meta($post['ID'], '_wp_attachment_license_url', esc_url( $attachment['license_link']));
 				}
 			}
 		}
@@ -196,16 +234,31 @@ class ImageCreditsNofollowPlugin {
 		foreach ($attachment_ids as $id) {
 			$credit_source = esc_attr(get_post_meta($id, '_wp_attachment_source_name', true));
 			$credit_link = esc_url(get_post_meta($id, '_wp_attachment_source_url', true));
+			$license_name = esc_attr(get_post_meta($id, '_wp_attachment_license_name', true));
+			$license_link = esc_url(get_post_meta($id, '_wp_attachment_license_url', true));
 			$source_dofollow = esc_attr( get_post_meta( $id, '_wp_attachment_source_dofollow', true ) );
+
+			$license = ' ';
+			if (!empty($license_name)) {
+				if (empty($license_link)) {
+					$license = $license_name . ' ';
+				} else {
+					if ( ( $source_dofollow == true ) || ( $source_dofollow == 1 ) ) {
+						$license = '<a href="' . $license_link . '" target="_blank">' . $license_name . '</a> ';
+					} else {
+						$license = '<a href="' . $license_link . '" rel="nofollow" target="_blank">' . $license_name . '</a> ';
+					}
+				}
+			}
 
 			if (!empty($credit_source)) {
 				if (empty($credit_link)) {
-					$credits[] = $credit_source;
+					$credits[] = $license . $credit_source;
 				} else {
 					if ( ( $source_dofollow == true ) || ( $source_dofollow == 1 ) ) {
-						$credits[] = '<a href="' . $credit_link . '" target="_blank">' . $credit_source . '</a>';					
+						$credits[] = $license . '<a href="' . $credit_link . '" target="_blank">' . $credit_source . '</a>';
 					} else {
-						$credits[] = '<a href="' . $credit_link . '" rel="nofollow" target="_blank">' . $credit_source . '</a>';
+						$credits[] = $license . '<a href="' . $credit_link . '" rel="nofollow" target="_blank">' . $credit_source . '</a>';
 					}
 				}
 			}
